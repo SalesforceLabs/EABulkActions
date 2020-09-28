@@ -1,0 +1,12 @@
+{
+    "orgName": "Analytics App Scratch Org",
+    "country": "US",
+    "adminEmail": "bkeogh@saleforce.com",
+    "edition": "Developer",
+    "features" : ["DevelopmentWave"],
+    "settings": {
+          "lightningExperienceSettings": {
+              "enableS1DesktopEnabled": true
+          }
+      }
+  }

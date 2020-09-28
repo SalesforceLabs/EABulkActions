@@ -1,0 +1,583 @@
+<apex:page controller="BulkActionController" action="{!init}" lightningStyleSheets="true" showHeader="false" sidebar="false" applyHtmlTag="false" applyBodyTag="false" docType="html-5.0">
+  <apex:pageMessages id="showmsg"></apex:pageMessages>
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+      <head>
+      <meta charset="utf-8" />
+      <meta http-equiv="x-ua-compatible" content="ie=edge" />
+      <title>Einstein Analytics ~ Salesforce - Bulkactions to add records</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <!-- Import the Design System style sheet -->
+      <apex:slds />
+      <apex:includeScript value="{! $Resource.jQuery }"/>
+      <style>
+        .hide-component{
+          display:none;
+        }
+        .table-outline{
+          border:1px solid rgb(221, 219, 218);
+          overflow-x:auto;
+        }
+        input::-webkit-calendar-picker-indicator{
+          display: none;
+        }
+        input[type="date"]::-webkit-input-placeholder{ 
+          visibility: hidden !important;
+        }
+        .task-headings{
+          font-weight:700;
+        }
+        .hide-asterik .requiredBlock {
+          display: none;
+        }
+        .center-text{
+          text-align: center;
+        }
+      </style>
+    </head>
+    <body>
+      <!-- REQUIRED SLDS WRAPPER -->
+      <div class="slds-scope">
+        <div class="container-fluid" id="in-process">
+          <div class="demo-only" style="height: 6rem;">
+            <div role="status" class="slds-spinner slds-spinner_medium">
+              <span class="slds-assistive-text">Loading</span>
+              <div class="slds-spinner__dot-a"></div>
+              <div class="slds-spinner__dot-b"></div>
+            </div>
+          </div>
+        </div>
+        <div class="container-fluid hide-component" id="err-msg">
+          <h2 id="emessage" align="center">Processing records from Einstein Analytics dashboard. Please wait...</h2>
+          <h2 id="emessage1" align="center">Please contact Salesforce Support team...</h2>
+        </div>
+        <!-- PRIMARY CONTENT WRAPPER -->
+        <div class="slds-m-around_xx-large hide-component" id="main-head">
+          <div class="slds-grid slds-grid_vertical-align-center">
+            <div id="header-icons">
+            </div>
+            <div class="slds-m-left_xx-small">
+              <h2 class="slds-text-heading_medium">You've selected<strong id="total-count"></strong>, what would you like to do with them?</h2>
+            </div>
+          </div>
+          <!-- Show Contacts -->
+          <div class="slds-m-top_small slds-m-bottom_xx-small hide-component table-outline" id="contacts-table">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover">
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col"><div class="slds-truncate" title="Name">Name</div></th>
+                  <th scope="col"><div class="slds-truncate" title="Phone">Phone</div></th>
+                  <th scope="col"><div class="slds-truncate" title="Email">Email</div></th>
+                </tr>
+              </thead>
+              <tbody id="table-contacts-rows">
+              </tbody>
+            </table>
+          </div>
+          <div class="slds-align_absolute-center hide-component" id="contacts-count-div">
+            <p class="slds-text-color_weak slds-text-title_caps hide-component" id="contacts-count">+10 MORE</p>
+          </div>
+          <!-- Show Leads -->
+          <div class="slds-m-top_small slds-m-bottom_xx-small hide-component table-outline" id="leads-table">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover">
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col"><div class="slds-truncate" title="Name">Name</div></th>
+                  <th scope="col"><div class="slds-truncate" title="Phone">Phone</div></th>
+                  <th scope="col"><div class="slds-truncate" title="Email">Email</div></th>
+                </tr>
+              </thead>
+              <tbody id="table-leads-rows">
+              </tbody>
+            </table>
+          </div>
+          <div class="slds-align_absolute-center hide-component" id="leads-count-div">
+            <p class="slds-text-color_weak slds-text-title_caps hide-component" id="leads-count">+10 MORE</p>
+          </div>
+          <!-- Show Leads and Contacts -->
+          <div class="slds-m-top_small slds-m-bottom_xx-small hide-component table-outline" id="leads-contacts-table">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover">
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col"><div class="slds-truncate" title="Name">Name</div></th>
+                  <th scope="col"><div class="slds-truncate" title="Phone">Phone</div></th>
+                  <th scope="col"><div class="slds-truncate" title="Email">Email</div></th>
+                </tr>
+              </thead>
+              <tbody id="table-leads-contacts-rows">
+              </tbody>
+            </table>
+          </div>
+          <div class="slds-align_absolute-center hide-component" id="leads-contacts-count-div">
+            <p class="slds-text-color_weak slds-text-title_caps hide-component" id="leads-contacts-count">+10 MORE</p>
+          </div>
+          
+          <!-- Add to Campaign -->
+          <div class="slds-box slds-m-top_large hide-component" id="add-to-campaign-div">
+            <div class="slds-text-heading_small">Add to Campaign</div>
+            <div class="slds-text-body_regular slds-text-color_weak slds-m-bottom_x-large">Choose an existing active campaign or create a new campaign</div>
+            <div class="slds-p-left_medium slds-p-right_medium">
+              <div id="add-to-campaign hide-component">
+                <div class="slds-text-body_regular task-headings slds-p-bottom_medium">Add to Existing</div>
+                <apex:form id="pbId" rendered="true">
+                  <apex:message for="L2CFxn" title="Error: Campaign members already"/>
+                  <apex:actionFunction name="apexAssignContactsRecords" action="{!Refresh}" reRender="">
+                    <apex:param name="crecords" id="crds" value="" assignTo="{!recordsFromWave}"/>
+                  </apex:actionFunction>
+                  <apex:actionFunction name="refreshPageSize" action="{!refreshPageSize}" status="fetchStatus" reRender="pbId"/>
+                  <apex:actionFunction id="L2CFxn" name="apexAddLeadsToCampaign" action="{!AddToCampaign}" oncomplete="addLeadsToCampaignSuccess()" reRender="pbId">
+                    <apex:param name="campaignId" value="" assignto="{!selectedCampaignId}"/>
+                  </apex:actionFunction>
+
+                  <div class="table-outline">
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover">
+                      <thead>
+                        <tr class="slds-line-height_reset">
+                          <th scope="col"><div class="slds-truncate" title="Campaign Name">Campaign Name</div></th>
+                          <th scope="col"><div class="slds-truncate" title="Campaign ID">Campaign ID</div></th>
+                          <th scope="col"><div class="slds-truncate" title="End Date">End Date</div></th>
+                          <th scope="col"><div class="slds-truncate" title="Type">Type</div></th>
+                          <th scope="col"><div class="slds-truncate" title="Members">Number of Members</div></th>
+                          <th scope="col"><div class="slds-truncate" title="Action"></div></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <apex:repeat value="{!Campaigns}" var="c">
+                          <tr class="slds-hint-parent">
+                            <td data-label="Campaign Name">
+                              <div class="slds-truncate" title="{!c.Name}"><a target="__blank" href="{!URLFOR($Action.Campaign.View, c.Id)}" tabindex="-1">{!c.Name}</a></div>
+                            </td>
+                            <td data-label="Campaign ID">
+                              <div class="slds-truncate" title="{!c.Id}">{!c.Id}</div>
+                            </td>
+                            <td data-label="End Date">
+                              <div class="slds-truncate" title="{!c.EndDate}">
+                                <apex:outputText value="{0,date,MM'/'dd'/'yyyy}">
+                                  <apex:param value="{!c.EndDate}" /> 
+                                </apex:outputText>
+                              </div>
+                            </td>
+                            <td data-label="Type">
+                              <div class="slds-truncate" title="{!c.Type}">{!c.Type}</div>
+                            </td>
+                            <td data-label="Members">
+                              <div class="slds-truncate" title="{!c.NumberOfContacts}">
+                                {!c.NumberOfContacts + c.NumberOfLeads}
+                              </div>
+                            </td>
+                            <td data-label="Account Name">
+                              <div class="slds-truncate" title="Cloudhub">
+                                <button type="button" class="slds-button slds-button_neutral" onclick="event.preventDefault();addToSelectedCampaign('{!JSENCODE(HTMLENCODE(c.Id))}','{!JSENCODE(HTMLENCODE(c.Name))}')">Add</button>
+                              </div>
+                            </td>
+                          </tr>
+                        </apex:repeat>
+                      </tbody>
+                    </table>
+                  </div>
+                  <ul class="slds-button-group-row slds-p-top_small">
+                    <li class="slds-button-group-item">
+                      <apex:selectList value="{!size}" multiselect="false" size="1" onchange="refreshPageSize();">
+                        <apex:selectOptions value="{!paginationSizeOptions}"/>
+                      </apex:selectList>
+                    </li>
+                    <li class="slds-button-group-item">
+                      <apex:commandButton status="fetchStatus" reRender="pbId" value="First" action="{!setCon.first}" disabled="{!!setCon.hasPrevious}" title="First Page"/> 
+                    </li>
+                    <li class="slds-button-group-item">
+                      <apex:commandButton status="fetchStatus" reRender="pbId" value="Previous" action="{!setCon.previous}" disabled="{!!setCon.hasPrevious}" title="Previous Page"/> 
+                    </li>
+                    <li class="slds-button-group-item">
+                      <apex:commandButton status="fetchStatus" reRender="pbId" value="Next" action="{!setCon.next}" disabled="{!!setCon.hasNext}" title="Next Page"/> 
+                    </li>
+                    <li class="slds-button-group-item">
+                      <apex:commandButton status="fetchStatus" reRender="pbId" value="Last" action="{!setCon.last}" disabled="{!!setCon.hasNext}" title="Last Page"/> 
+                    </li>
+                    <li class="slds-button-group-item slds-align_absolute-center">
+                      <strong class="slds-text-body_regular slds-text-color_weak">{!(setCon.pageNumber * size)+1-size}-{!IF((setCon.pageNumber * size)>noOfRecords, noOfRecords,
+                        (setCon.pageNumber * size))} of {!noOfRecords}
+                      </strong>
+                    </li>
+                    <li class="slds-button-group-item slds-align_absolute-center">
+                      <apex:outputPanel >            
+                        <apex:actionStatus id="fetchStatus" >
+                          <apex:facet name="start" >
+                            <img src="/img/loading.gif" />          
+                          </apex:facet>
+                        </apex:actionStatus>
+                      </apex:outputPanel> 
+                    </li>
+                  </ul>
+                  <apex:pageBlock id="hiddenBlock" rendered="false"></apex:pageBlock>
+                </apex:form>
+              </div>
+              <div id="add-to-new-campaign hide-component">
+                <div class="slds-text-body_regular task-headings slds-m-top_x-large slds-p-bottom_medium">Create New</div>
+                <apex:form >
+                  <apex:actionFunction name="createNewCampaignFn" action="{!createNewCampaign}" oncomplete="createdCampaignSuccess('{!createdCampaign}')" reRender="pbId"/>
+                  <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                      <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="camp-name">
+                          <abbr class="slds-required" title="required">* </abbr>{!$ObjectType.Campaign.fields.Name.Label}
+                        </label>
+                        <div class="slds-form-element__control hide-asterik">
+                          <apex:inputField styleClass="slds-input id-camp-name" id="camp-name" value="{! Campaign.Name }"/>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="slds-col">
+                      <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="camp-type">{!$ObjectType.Campaign.fields.Type.Label}</label>
+                        <div class="slds-form-element__control">
+                          <apex:inputField styleClass="slds-select id-camp-type" id="camp-type" value="{! Campaign.Type}"/>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="slds-col">
+                      <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="start-date-input">{!$ObjectType.Campaign.fields.StartDate.Label}</label>
+                        <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_right">
+                          <apex:inputField style="width: -webkit-fill-available;" styleClass="slds-input start-date-input-id" id="start-date-input" showDatePicker="false" onfocus="DatePicker.pickDate(false, this , false);" value="{! Campaign.StartDate }"/>
+                          <button onclick="event.preventDefault();" class="slds-button slds-button_icon slds-input__icon slds-input__icon_right" title="Select a date">
+                            <svg class="slds-button__icon" aria-hidden="true">
+                              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#event')}" />
+                            </svg>
+                            <span class="slds-assistive-text">Select a date</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="slds-col">
+                      <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="end-date-input">{!$ObjectType.Campaign.fields.EndDate.Label}</label>
+                        <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_right">
+                          <apex:inputField style="width: -webkit-fill-available;" styleClass="slds-input end-date-input-id" id="end-date-input" showDatePicker="false" onfocus="DatePicker.pickDate(false, this , false);" value="{! Campaign.EndDate }"/>
+                          <button onclick="event.preventDefault();" class="slds-button slds-button_icon slds-input__icon slds-input__icon_right" title="Select a date">
+                            <svg class="slds-button__icon" aria-hidden="true">
+                              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#event')}" />
+                            </svg>
+                            <span class="slds-assistive-text">Select a date</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="slds-col">
+                      <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="create-camp-btn">&nbsp;</label>
+                        <div class="slds-form-element__control">
+                          <apex:commandButton styleClass="slds-input slds-button slds-button_neutral" onclick="confirmCreateNewCamp()" id="create-camp-btn" value="Create Campaign and Add Members" reRender="pbid, newcamp, pgblk"/>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </apex:form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- / PRIMARY CONTENT WRAPPER -->
+        
+        <!--Toast-->
+        <div style="position:fixed;top: 2rem; left: 1rem; right:1rem; width: 50%; margin: auto; display:none;" id="toast" class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_success" role="alert">
+          <span class="slds-assistive-text">Toast</span>
+          <span class="slds-icon_container slds-icon-utility-warning slds-m-right_x-small" title="Description of icon when needed">
+            <svg class="slds-icon slds-icon_x-small" aria-hidden="true">
+              <use id="toast-icon" xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#success')}"></use>
+            </svg>
+          </span>
+          <h2 id="toast-message">Message</h2>
+          <div class="slds-notify__close">
+            <button onclick="closeToast()" class="slds-button slds-button_icon slds-button_icon-small slds-button_icon-inverse" title="Close">
+              <svg class="slds-button__icon" aria-hidden="true">
+                <use xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#close')}"></use>
+              </svg>
+              <span class="slds-assistive-text">Close</span>
+            </button>
+          </div>
+        </div>
+        
+        <!--Confirm Modal-->
+        <div id="confirm-modal" class="hide-component">
+          <section role="dialog" tabindex="-1" aria-labelledby="confirm-modal-heading" aria-modal="true" aria-describedby="confirm-modal-content" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+              <header class="slds-modal__header">
+                <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick="closeConfirmModal();">
+                  <svg class="slds-button__icon slds-button__icon_large" aria-hidden="true">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#close')}"></use>
+                  </svg>
+                  <span class="slds-assistive-text">Close</span>
+                </button>
+                <h2 id="confirm-modal-heading" class="slds-text-heading_medium slds-hyphenate">Add to Campaign</h2>
+              </header>
+              <div class="slds-modal__content slds-p-around_medium center-text">
+                <p id="confirm-modal-content">This is confirm modal.</p>
+              </div>
+              <footer class="slds-modal__footer">
+                <button id="confirm-btn-no" onclick="closeConfirmModal()" class="slds-button slds-button_neutral">Cancel</button>
+                <button id="confirm-btn-yes" onclick="addLeadsToCampaign()" class="slds-button slds-button_brand">Add</button>
+              </footer>
+            </div>
+          </section>
+          <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+        
+        <apex:form >
+          <apex:actionFunction name="refreshFn" action="{!Refresh}" rerender="conid, accid, leaid, pbId" status="myStatus"/>
+        </apex:form>
+      </div>
+      <script>
+      
+      var tableRowLimit = 5;
+      $(function() {
+        $.ajaxSetup({
+          headers: {"Authorization": 'Bearer {!$Api.Session_ID}'}
+        });
+        
+        setTimeout(executeQuery, 1000);
+        
+        $('.start-date-input-id,.end-date-input-id').keydown(function(e) {
+          e.preventDefault();
+          return false;
+        });
+        
+        $('#list-name').keypress(function (e) {
+          var regex = new RegExp("^[a-zA-Z0-9]+$");
+          var str = String.fromCharCode(!e.charCode ? e.which : e.charCode);
+          if (regex.test(str)) {
+            return true;
+          }
+          e.preventDefault();
+          return false;
+        });
+        
+      });
+      
+      function confirmCreateNewCamp() {
+        $("#confirm-btn-yes").attr('onclick','addLeadsToCampaign()');
+        let campName = $(".id-camp-name").val().replace('<','&lt;').replace('>','&gt;');
+        
+        if (campName != '') {
+          let message = 'Are you sure you want to add selected leads to new campaign "'+campName+'"?';
+          showConfirmModal(message);
+        }
+      }
+      
+      function addLeadsToCampaign() {
+        let startDate = new Date($(".start-date-input-id").val().trim());
+        let endDate = new Date($(".end-date-input-id").val().trim());
+        if (startDate > endDate) {
+          closeConfirmModal();
+          let message = "Could not create campaign: start date must be before end date";
+          showToast(false, message);
+          return;
+        }
+        createNewCampaignFn();
+        closeConfirmModal();
+      }
+      function createdCampaignSuccess(id) {
+        let campName = $(".id-camp-name").val().replace('<','&lt;').replace('>','&gt;');
+        let message = '<a target="__blank" href="/lightning/r/Campaign/'+id+'/view">'+campName+'</a>&nbsp;was created and members added.';
+        showToast(true, message);
+        $(".id-camp-name,.start-date-input-id,.end-date-input-id").val('');
+        closeConfirmModal();
+      }
+      
+      let selectedCampaignToAdd;
+      function addToSelectedCampaign(id,name) {
+        $("#confirm-btn-yes").attr('onclick','addLeadsToSelectedCampaign()');
+        selectedCampaignToAdd = id;
+        // name is already escaped on line 169 no need to do anything here
+        let message = 'Are you sure you want to add selected leads to campaign "'+name+'"?';
+        showConfirmModal(message);
+      }
+      function addLeadsToSelectedCampaign() {
+        apexAddLeadsToCampaign(selectedCampaignToAdd);
+        closeConfirmModal();
+      }
+      function addLeadsToCampaignSuccess() {
+        closeConfirmModal();
+        let message = 'Campaign Members Added.';
+        showToast(true, message);
+      }
+      
+      /* Executes the SAQL query and displays the resulting accounts. Note: Account.Name and AccountId referenced below refer to the dataset field names. Update them to match your dataset fields. */        
+      function executeQuery() {
+        var query = {};
+        query.statements = "{!JSENCODE(savedquery)}";
+        var queryObj = {query: query.statements};
+        $.ajax({
+          type: 'POST',
+          url: '/services/data/v39.0/wave/query',
+          data: JSON.stringify(queryObj),
+          contentType: 'application/json',
+          success: function(data) {
+            setTimeout(function() {extractQueryResults(data.results.records);}, 1000);
+          }
+        });
+      }
+      
+      /* Calls the Apex controller method that saves contacts that can be added to a Campaign */
+      function extractQueryResults(queryResultRecords) {
+        Visualforce.remoting.Manager.invokeAction(
+          '{!$RemoteAction.BulkActionController.extractResultRecords}',
+          queryResultRecords, 
+          function(result, event) {
+            if (event.status) {
+              let res = result.toString();
+              res = res.replace(/\&quot\;/g,'"');
+              res = JSON.parse(res);
+              processData(res);
+              $('#message').html(queryResultRecords.length + ' records are processed for adding to a campaign');
+              apexAssignContactsRecords(result);
+            }
+            else {
+              apexAssignContactsRecords("");
+              $('#in-process').hide();
+              showErrMessages(event.message);
+            }
+          }
+        );
+      }
+      
+      function addTableRows(rowRecords, rows, len) {
+        for(let i=0;i<len;i++) {
+          rows += '<tr class="slds-hint-parent">';
+          rows += '<td data-label="Name">';
+          rows += '<div class="slds-truncate" title="'+rowRecords[i].Name+'">'+rowRecords[i].Name+'</div>';
+          rows += '</td>';
+          rows += '<td data-label="Phone">';
+          if (rowRecords[i].Phone) {
+            rows += '<div class="slds-truncate" title="'+rowRecords[i].Phone+'">'+rowRecords[i].Phone+'</div>';
+          } else {
+            rows += '<div class="slds-truncate" title=""></div>';
+          }
+          rows += '</td>';
+          rows += '<td data-label="Email">';
+          if(rowRecords[i].Email) {
+            rows += '<div class="slds-truncate" title="'+rowRecords[i].Email+'">'+rowRecords[i].Email+'</div>';
+          } else {
+            rows += '<div class="slds-truncate" title=""></div>';
+          }
+          rows += '</td>';
+          rows += '</tr>';
+        }
+        return rows;
+      }
+      function processData(data) {
+        $('#header-icons').html('');
+        $('#total-count').html('');
+        if(data.leadRecords.length > 0 && data.contactRecords.length > 0) {
+            $('#leads-contacts-table').show();
+          $('#total-count').append('&nbsp;'+ (data.leadRecords.length + data.contactRecords.length) +' Leads/Contacts');
+          appendHeaderIcons("lead","{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#lead')}");
+          appendHeaderIcons("contact","{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#contact')}");
+          let len = ((data.leadRecords.length + data.contactRecords.length) > tableRowLimit) ? tableRowLimit : (data.leadRecords.length + data.contactRecords.length);
+          let rows = '';
+          if (data.leadRecords.length>=len) {
+                rows += addTableRows(data.leadRecords, rows, len);
+          } else {
+            rows += addTableRows( data.leadRecords, rows, data.leadRecords.length);
+            rows += addTableRows( data.contactRecords, rows, (len - data.leadRecords.length));
+          }
+          $('#table-leads-contacts-rows').html(rows);
+          if ((data.leadRecords.length + data.contactRecords.length) > tableRowLimit) {
+            let c = (data.leadRecords.length + data.contactRecords.length) - tableRowLimit;
+            $('#leads-contacts-count').html('+'+c+' MORE');
+            $('#leads-contacts-count').show();
+            $('#leads-contacts-count-div').show();
+          }
+        }
+        if (data.leadRecords.length > 0 && data.contactRecords.length == 0) {
+          $('#leads-table').show();
+          $('#total-count').append('&nbsp;'+data.leadRecords.length+' Leads');
+          appendHeaderIcons("lead","{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#lead')}");
+          let len = (data.leadRecords.length > tableRowLimit) ? tableRowLimit : data.leadRecords.length;
+          let rows = '';
+          rows +=addTableRows(data.leadRecords, rows, len);
+          $('#table-leads-rows').html(rows);
+          if (data.leadRecords.length > tableRowLimit) {
+            let c = data.leadRecords.length - tableRowLimit;
+            $('#leads-count').html('+'+c+' MORE');
+            $('#leads-count').show();
+            $('#leads-count-div').show();
+          }
+        }
+          
+        if (data.contactRecords.length > 0 && data.leadRecords.length == 0) {
+          $('#contacts-table').show();
+          $('#total-count').append('&nbsp;'+data.contactRecords.length+' Contacts');
+          appendHeaderIcons("contact","{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#contact')}");
+          let len = (data.contactRecords.length > tableRowLimit) ? tableRowLimit : data.contactRecords.length;
+          let rows = '';
+          rows +=addTableRows(data.contactRecords, rows, len);
+          $('#table-contacts-rows').html(rows);
+          if (data.contactRecords.length > tableRowLimit) {
+            let c = data.contactRecords.length - tableRowLimit;
+            $('#contacts-count').html('+'+c+' MORE');
+            $('#contacts-count').show();
+            $('#contacts-count-div').show();
+          }
+        }
+        $('#in-process').hide();
+        $('#main-head').show();
+        
+        if (data.addToCampaign === true) {
+          $('#add-to-campaign-div').show();
+          $('#add-to-campaign').show();
+        }
+        if (data.addToNewCampaign === true) {
+          $('#add-to-campaign-div').show();
+          $('#add-to-new-campaign').show();
+        }
+      }
+      
+      function showConfirmModal(message) {
+        $('#confirm-modal-content').html(message);
+        $('#confirm-modal').show();
+      }
+      
+      function closeConfirmModal() {
+        $('#confirm-modal').hide();
+      }
+       
+      function showToast(isSuccess, toastMessage) {
+        if (isSuccess) {
+          $("#toast").addClass("slds-theme_success");
+          $('#toast-icon').attr("xlink:href", "{!URLFOR($Asset.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#success')}");
+        } else {
+          $("#toast").addClass("slds-theme_error");
+          $('#toast-icon').attr("xlink:href", "{!URLFOR($Asset.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#error')}");
+        }
+        $("#toast-message").html(toastMessage);
+        $("#toast").fadeIn(500);
+        setTimeout(function() {
+          closeToast();
+        }, 5000);
+      }
+      
+      function showErrMessages(errMessage) {
+        $("#emessage").html(errMessage);
+        $('#err-msg').show();
+      }
+      
+      function closeToast() {
+        $("#toast").fadeOut(500, function() {
+          $("#toast").removeClass("slds-theme_success");
+          $("#toast").removeClass("slds-theme_error");
+        });
+      }
+      
+      function appendHeaderIcons(type,icon) {
+        let iconDiv = `<span class="slds-icon_container slds-m-right_x-small slds-icon-standard-${type}" title="icon">
+          <svg class="slds-icon" aria-hidden="true">
+            <use xlink:href="${icon}"></use>
+            </svg>
+            <span class="slds-assistive-text">icon</span>
+            </span>`;
+         $('#header-icons').append(iconDiv);
+      }
+      
+      </script>
+    </body>
+  </html>
+</apex:page>
