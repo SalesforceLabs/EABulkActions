@@ -111,10 +111,10 @@ public with sharing class BulkActionController {
   // To determine the records to perform the bulk action on, extract the SAQL query given by Wave
   public PageReference init() {
     savedquery = ApexPages.currentPage().getParameters().get('query');
-      if(savedquery == null || savedquery == '') {
-        ApexPages.addmessage(new ApexPages.message(ApexPages.severity.INFO,'Preview not available for this page. Use bulk actions from a details table in an Analytics dashboard with leads and contacts to assign them to campaigns.'));
-        return null;
-           }
+    if(savedquery == null || savedquery == '') {
+      ApexPages.addmessage(new ApexPages.message(ApexPages.severity.INFO,'Preview not available for this page. Use bulk actions from a details table in an Analytics dashboard with leads and contacts to assign them to campaigns.'));
+      return null;
+    }
     System.debug('BulkActionController::init savedquery=' + savedquery);
     return null;
   }
@@ -289,7 +289,7 @@ public with sharing class BulkActionController {
            !Schema.sObjectType.CampaignMember.fields.LeadId.isCreateable() ||
            !Schema.sObjectType.CampaignMember.fields.Status.isCreateable() ||
            !Schema.sObjectType.CampaignMember.fields.ContactId.isCreateable()) {
-           ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.FATAL,'Insufficient CampaignMember Create Field access'));    
+           ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.FATAL,'Insufficient CampaignMember Create Field access'));
         }
         upsert campaignMembers2Add;
         setCon = null;
